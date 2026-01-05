@@ -18,11 +18,22 @@ class TaskResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'due_date' => $this->due_date,
+            'due_date' => $this->due_date->toIso8601String(),
             'status' => $this->status,
             'priority' => $this->priority,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'is_overdue' => $this->due_date->isPast() && $this->status === 'pending',
+            'created_at' => $this->created_at->toIso8601String(),
+            'updated_at' => $this->updated_at->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Customize the response for a resource.
+     */
+    public function with(Request $request): array
+    {
+        return [
+            'success' => true,
         ];
     }
 }
