@@ -96,4 +96,30 @@ class TaskController extends Controller
             'message' => 'Task deleted successfully'
         ], 200);
     }
+
+    /**
+     * Get task summary/statistics for the authenticated user.
+     */
+    public function summary()
+    {
+        $userId = auth()->id();
+
+        $summary = [
+            'total' => Task::where('user_id', $userId)->count(),
+            'pending' => Task::where('user_id', $userId)->pending()->count(),
+            'completed' => Task::where('user_id', $userId)->completed()->count(),
+            'overdue' => Task::where('user_id', $userId)->overdue()->count(),
+            'due_soon' => Task::where('user_id', $userId)->dueSoon()->count(),
+            'by_priority' => [
+                'high' => Task::where('user_id', $userId)->where('priority', 'high')->pending()->count(),
+                'medium' => Task::where('user_id', $userId)->where('priority', 'medium')->pending()->count(),
+                'low' => Task::where('user_id', $userId)->where('priority', 'low')->pending()->count(),
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
 }
