@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\SyncController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,5 +42,10 @@ Route::prefix('v1')->group(function () {
 
         // Additional task endpoints
         Route::get('/tasks-summary', [TaskController::class, 'summary']);
+
+        // Sync endpoints for offline-first mobile apps
+        Route::post('/sync', [SyncController::class, 'sync']);           // Bidirectional sync
+        Route::get('/sync/full', [SyncController::class, 'fullSync']);   // Full sync (initial or refresh)
+        Route::get('/sync/pull', [SyncController::class, 'pull']);       // Pull changes since timestamp
     });
 });

@@ -1,0 +1,684 @@
+{
+	"info": {
+		"_postman_id": "reminder-system-api",
+		"name": "Reminder System API",
+		"description": "Production-level API for managing tasks and reminders with authentication.\n\n## Base URL\n`http://localhost:8000/api`\n\n## Authentication\nAll protected endpoints require Bearer token authentication.\nAfter login/register, copy the token and set it in the Authorization header.\n\n## Rate Limits\n- Register: 5 requests/minute\n- Login: 10 requests/minute\n- Protected routes: 60 requests/minute\n\n## Offline-First Sync\nThe API supports offline-first mobile apps with bidirectional sync, conflict resolution using timestamps and version numbers.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://todo.abuubaida921.com/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Check if the API is running.\n\n**Authentication:** Not required\n\n**Response:**\n- `success` (boolean): API status\n- `message` (string): Status message\n- `version` (string): API version\n- `timestamp` (string): Current server time in ISO8601 format"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Abu Ubaida\",\n    \"email\": \"ubaidanazia@gmail.com\",\n    \"password\": \"12345678\",\n    \"password_confirmation\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/register",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "register"]
+						},
+						"description": "Register a new user account.\n\n**Authentication:** Not required\n\n**Rate Limit:** 5 requests per minute\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | ✅ YES | User's full name (max 255 chars) |\n| `email` | string | ✅ YES | Valid email address (unique) |\n| `password` | string | ✅ YES | Password (min 8 chars) |\n| `password_confirmation` | string | ✅ YES | Must match password |\n\n## Response (201 Created)\n```json\n{\n    \"success\": true,\n    \"message\": \"User registered successfully\",\n    \"data\": {\n        \"user\": {...},\n        \"token\": \"eyJ0eXAi...\"\n    }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"ubaidanazia@gmail.com\",\n    \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/login",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "login"]
+						},
+						"description": "Login with email and password to get access token.\n\n**Authentication:** Not required\n\n**Rate Limit:** 10 requests per minute\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `email` | string | ✅ YES | Registered email address |\n| `password` | string | ✅ YES | Account password |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Login successful\",\n    \"data\": {\n        \"user\": {...},\n        \"token\": \"eyJ0eXAi...\"\n    }\n}\n```\n\n## Response (401 Unauthorized)\n```json\n{\n    \"success\": false,\n    \"message\": \"The provided credentials are incorrect.\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/logout",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "logout"]
+						},
+						"description": "Logout and revoke the current access token.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n## Request Body Fields\n\nNo request body required.\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Successfully logged out\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/profile",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "profile"]
+						},
+						"description": "Get the authenticated user's profile information.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n## Request Body Fields\n\nNo request body required.\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\",\n            \"email_verified_at\": null,\n            \"created_at\": \"2026-01-05T10:00:00.000000Z\",\n            \"updated_at\": \"2026-01-05T10:00:00.000000Z\"\n        }\n    }\n}\n```"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks"],
+							"query": [
+								{
+									"key": "priority",
+									"value": "high",
+									"description": "Filter by priority: low, medium, high",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Filter by status: pending, completed",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number for pagination",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all tasks for the authenticated user with optional filtering.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## Query Parameters (All Optional)\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `priority` | string | ❌ NO | Filter by priority: `low`, `medium`, `high` |\n| `status` | string | ❌ NO | Filter by status: `pending`, `completed` |\n| `page` | integer | ❌ NO | Page number (default: 1, 15 items per page) |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": 1,\n            \"client_id\": \"uuid-from-client\",\n            \"title\": \"Complete project\",\n            \"description\": \"Finish the reminder app\",\n            \"due_date\": \"2026-01-10T14:00:00+00:00\",\n            \"status\": \"pending\",\n            \"priority\": \"high\",\n            \"is_overdue\": false,\n            \"is_deleted\": false,\n            \"version\": 1,\n            \"server_updated_at\": \"2026-01-05T10:00:00+00:00\",\n            \"created_at\": \"2026-01-05T10:00:00+00:00\",\n            \"updated_at\": \"2026-01-05T10:00:00+00:00\"\n        }\n    ],\n    \"links\": {...},\n    \"meta\": {...}\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tasks (Filter by Priority)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks?priority=high",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks"],
+							"query": [
+								{
+									"key": "priority",
+									"value": "high",
+									"description": "Filter by priority: low, medium, high"
+								}
+							]
+						},
+						"description": "Get all HIGH priority tasks for the authenticated user.\n\n**Authentication:** ✅ Required (Bearer Token)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tasks (Filter by Status)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks?status=pending",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks"],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Filter by status: pending, completed"
+								}
+							]
+						},
+						"description": "Get all PENDING tasks for the authenticated user.\n\n**Authentication:** ✅ Required (Bearer Token)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Complete project documentation\",\n    \"description\": \"Write comprehensive API documentation for the reminder system\",\n    \"due_date\": \"2026-01-15T14:00:00+00:00\",\n    \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/tasks",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks"]
+						},
+						"description": "Create a new task/reminder.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## Request Body Fields\n\n| Field | Type | Required | Validation | Description |\n|-------|------|----------|------------|-------------|\n| `title` | string | ✅ YES | max 255 chars | Task title |\n| `description` | string | ❌ NO | max 1000 chars | Task description |\n| `due_date` | string | ✅ YES | ISO8601 format, must be in future | When the task is due |\n| `priority` | string | ✅ YES | `low`, `medium`, or `high` | Task priority level |\n\n## Response (201 Created)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"title\": \"Complete project documentation\",\n        \"description\": \"Write comprehensive API documentation\",\n        \"due_date\": \"2026-01-15T14:00:00+00:00\",\n        \"status\": \"pending\",\n        \"priority\": \"high\",\n        \"is_overdue\": false,\n        \"version\": 1,\n        \"created_at\": \"2026-01-05T10:00:00+00:00\",\n        \"updated_at\": \"2026-01-05T10:00:00+00:00\"\n    }\n}\n```\n\n## Response (422 Validation Error)\n```json\n{\n    \"success\": false,\n    \"message\": \"Validation errors\",\n    \"errors\": {\n        \"title\": [\"Task title is required.\"],\n        \"due_date\": [\"Due date must be in the future.\"]\n    }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks/1",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks", "1"]
+						},
+						"description": "Get a specific task by ID.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## URL Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `id` | integer | ✅ YES | Task ID |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"client_id\": \"uuid-from-client\",\n        \"title\": \"Complete project\",\n        \"description\": \"Finish the reminder app\",\n        \"due_date\": \"2026-01-10T14:00:00+00:00\",\n        \"status\": \"pending\",\n        \"priority\": \"high\",\n        \"is_overdue\": false,\n        \"is_deleted\": false,\n        \"version\": 1,\n        \"server_updated_at\": \"2026-01-05T10:00:00+00:00\",\n        \"created_at\": \"2026-01-05T10:00:00+00:00\",\n        \"updated_at\": \"2026-01-05T10:00:00+00:00\"\n    }\n}\n```\n\n## Response (403 Forbidden)\n```json\n{\n    \"success\": false,\n    \"message\": \"Access denied. You do not have permission to perform this action.\"\n}\n```\n\n## Response (404 Not Found)\n```json\n{\n    \"success\": false,\n    \"message\": \"Resource not found.\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated task title\",\n    \"description\": \"Updated description\",\n    \"due_date\": \"2026-01-20T10:00:00+00:00\",\n    \"status\": \"completed\",\n    \"priority\": \"low\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/tasks/1",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks", "1"]
+						},
+						"description": "Update an existing task. You can update any or all fields.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## URL Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `id` | integer | ✅ YES | Task ID |\n\n## Request Body Fields (All Optional - send only what you want to update)\n\n| Field | Type | Required | Validation | Description |\n|-------|------|----------|------------|-------------|\n| `title` | string | ❌ NO | max 255 chars | Task title |\n| `description` | string | ❌ NO | max 1000 chars | Task description |\n| `due_date` | string | ❌ NO | ISO8601 format, must be in future | When the task is due |\n| `status` | string | ❌ NO | `pending` or `completed` | Task status |\n| `priority` | string | ❌ NO | `low`, `medium`, or `high` | Task priority level |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"id\": 1,\n        \"title\": \"Updated task title\",\n        \"description\": \"Updated description\",\n        \"due_date\": \"2026-01-20T10:00:00+00:00\",\n        \"status\": \"completed\",\n        \"priority\": \"low\",\n        \"is_overdue\": false,\n        \"version\": 2,\n        \"created_at\": \"2026-01-05T10:00:00+00:00\",\n        \"updated_at\": \"2026-01-05T12:00:00+00:00\"\n    }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task (Mark as Completed)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/tasks/1",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks", "1"]
+						},
+						"description": "Mark a task as completed (quick update).\n\n**Authentication:** ✅ Required (Bearer Token)\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `status` | string | ✅ YES | Set to `completed` |"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task (Change Priority)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/tasks/1",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks", "1"]
+						},
+						"description": "Change task priority (quick update).\n\n**Authentication:** ✅ Required (Bearer Token)\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `priority` | string | ✅ YES | `low`, `medium`, or `high` |"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks/1",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks", "1"]
+						},
+						"description": "Delete a task permanently.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## URL Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `id` | integer | ✅ YES | Task ID to delete |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"message\": \"Task deleted successfully\"\n}\n```\n\n## Response (403 Forbidden)\n```json\n{\n    \"success\": false,\n    \"message\": \"Access denied. You do not have permission to perform this action.\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tasks Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/tasks-summary",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "tasks-summary"]
+						},
+						"description": "Get task statistics/summary for the authenticated user.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## Request Body Fields\n\nNo request body required.\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"total\": 25,\n        \"pending\": 18,\n        \"completed\": 7,\n        \"overdue\": 3,\n        \"due_soon\": 5,\n        \"by_priority\": {\n            \"high\": 4,\n            \"medium\": 8,\n            \"low\": 6\n        }\n    }\n}\n```\n\n## Response Fields\n\n| Field | Description |\n|-------|-------------|\n| `total` | Total number of tasks |\n| `pending` | Tasks with status 'pending' |\n| `completed` | Tasks with status 'completed' |\n| `overdue` | Pending tasks past their due date |\n| `due_soon` | Pending tasks due within 24 hours |\n| `by_priority.high` | High priority pending tasks |\n| `by_priority.medium` | Medium priority pending tasks |\n| `by_priority.low` | Low priority pending tasks |"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sync (Offline-First)",
+			"item": [
+				{
+					"name": "Bidirectional Sync",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"last_sync_at\": \"2026-01-04T00:00:00+00:00\",\n    \"tasks\": [\n        {\n            \"client_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n            \"server_id\": null,\n            \"title\": \"New task created offline\",\n            \"description\": \"This was created while offline\",\n            \"due_date\": \"2026-01-20T10:00:00+00:00\",\n            \"status\": \"pending\",\n            \"priority\": \"high\",\n            \"is_deleted\": false,\n            \"local_updated_at\": \"2026-01-05T08:00:00+00:00\",\n            \"version\": 1\n        },\n        {\n            \"client_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n            \"server_id\": 1,\n            \"title\": \"Updated task from offline\",\n            \"description\": \"This was edited while offline\",\n            \"due_date\": \"2026-01-15T14:00:00+00:00\",\n            \"status\": \"completed\",\n            \"priority\": \"medium\",\n            \"is_deleted\": false,\n            \"local_updated_at\": \"2026-01-05T09:30:00+00:00\",\n            \"version\": 2\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/sync",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "sync"]
+						},
+						"description": "Bidirectional sync for offline-first mobile apps. Sends local changes and receives server changes with conflict resolution.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## How It Works\n1. Client sends all local changes since last sync\n2. Server compares timestamps and versions for conflict resolution\n3. Server applies client changes (if newer)\n4. Server returns all its changes since client's last sync\n5. Client updates local database with server changes\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `last_sync_at` | string | ❌ NO | ISO8601 timestamp of last successful sync (null for first sync) |\n| `tasks` | array | ❌ NO | Array of tasks to sync |\n\n## Task Object Fields (in tasks array)\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `client_id` | string | ✅ YES | UUID generated by client for this task |\n| `server_id` | integer | ❌ NO | Server ID (null for new tasks created offline) |\n| `title` | string | ✅ YES | Task title (max 255 chars) |\n| `description` | string | ❌ NO | Task description (max 1000 chars) |\n| `due_date` | string | ✅ YES | ISO8601 format due date |\n| `status` | string | ✅ YES | `pending` or `completed` |\n| `priority` | string | ✅ YES | `low`, `medium`, or `high` |\n| `is_deleted` | boolean | ❌ NO | true if task was deleted locally |\n| `local_updated_at` | string | ✅ YES | ISO8601 timestamp when task was last modified locally |\n| `version` | integer | ❌ NO | Version number for conflict detection |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"synced_tasks\": [\n            {\n                \"server_id\": 5,\n                \"client_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n                \"title\": \"New task created offline\",\n                \"version\": 1,\n                \"server_updated_at\": \"2026-01-05T10:00:00+00:00\"\n            }\n        ],\n        \"server_changes\": [\n            {\n                \"server_id\": 2,\n                \"client_id\": \"another-uuid\",\n                \"title\": \"Task edited on Phone B\",\n                \"version\": 3,\n                \"server_updated_at\": \"2026-01-05T09:00:00+00:00\"\n            }\n        ],\n        \"conflicts\": [\n            {\n                \"status\": \"conflict\",\n                \"client_task\": {...},\n                \"server_task\": {...},\n                \"resolution\": \"server_wins\",\n                \"reason\": \"Server has newer timestamp\"\n            }\n        ],\n        \"server_time\": \"2026-01-05T10:05:00+00:00\"\n    }\n}\n```\n\n## Conflict Resolution Strategy\n- Uses **Last Write Wins** with timestamp comparison\n- Server compares `local_updated_at` from client with `server_updated_at`\n- If server has newer timestamp, server version wins (returned in conflicts array)\n- If client has newer timestamp, client changes are applied\n- `version` field helps detect concurrent modifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Full Sync (Initial/Refresh)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/sync/full",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "sync", "full"]
+						},
+						"description": "Get all tasks for initial sync or full refresh. Use this when:\n- User logs in on a new device\n- App is freshly installed\n- User requests a full refresh\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## Request Body Fields\n\nNo request body required.\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"tasks\": [\n            {\n                \"server_id\": 1,\n                \"client_id\": \"uuid-1\",\n                \"title\": \"Task 1\",\n                \"description\": \"Description\",\n                \"due_date\": \"2026-01-10T14:00:00+00:00\",\n                \"status\": \"pending\",\n                \"priority\": \"high\",\n                \"is_deleted\": false,\n                \"version\": 1,\n                \"server_updated_at\": \"2026-01-05T10:00:00+00:00\",\n                \"created_at\": \"2026-01-05T10:00:00+00:00\"\n            }\n        ],\n        \"server_time\": \"2026-01-05T10:00:00+00:00\"\n    }\n}\n```\n\n## Mobile App Implementation\n1. Call this endpoint on first login or fresh install\n2. Replace entire local database with returned tasks\n3. Store `server_time` as `last_sync_at` for future incremental syncs"
+					},
+					"response": []
+				},
+				{
+					"name": "Pull Changes (Incremental)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/sync/pull?since=2026-01-04T00:00:00+00:00",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "sync", "pull"],
+							"query": [
+								{
+									"key": "since",
+									"value": "2026-01-04T00:00:00+00:00",
+									"description": "ISO8601 timestamp - get changes since this time"
+								}
+							]
+						},
+						"description": "Pull-only sync to get server changes since a specific timestamp. Use this for lightweight sync when client has no pending changes.\n\n**Authentication:** ✅ Required (Bearer Token)\n\n**Rate Limit:** 60 requests per minute\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `since` | string | ✅ YES | ISO8601 timestamp - get all changes after this time |\n\n## Response (200 OK)\n```json\n{\n    \"success\": true,\n    \"data\": {\n        \"changes\": [\n            {\n                \"server_id\": 2,\n                \"client_id\": \"uuid-2\",\n                \"title\": \"Task modified on another device\",\n                \"status\": \"completed\",\n                \"is_deleted\": false,\n                \"version\": 2,\n                \"server_updated_at\": \"2026-01-05T09:00:00+00:00\"\n            },\n            {\n                \"server_id\": 3,\n                \"client_id\": \"uuid-3\",\n                \"title\": \"Deleted task\",\n                \"is_deleted\": true,\n                \"version\": 2,\n                \"server_updated_at\": \"2026-01-05T08:00:00+00:00\"\n            }\n        ],\n        \"server_time\": \"2026-01-05T10:00:00+00:00\"\n    }\n}\n```\n\n## Mobile App Implementation\n1. Store `server_time` from last sync as `last_sync_at`\n2. Call this endpoint with `since=last_sync_at`\n3. For each change:\n   - If `is_deleted` is true: delete local copy\n   - If `server_updated_at` > local `updated_at`: update local copy\n4. Store new `server_time` as `last_sync_at`"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

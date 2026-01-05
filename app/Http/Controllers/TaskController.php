@@ -18,7 +18,7 @@ class TaskController extends Controller
     {
         $this->authorize('viewAny', Task::class);
 
-        $query = Task::where('user_id', auth()->id());
+        $query = Task::where('user_id', auth()->id())->active();
 
         if ($request->has('priority')) {
             $query->where('priority', $request->priority);
