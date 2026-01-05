@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Task;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\TaskResource;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -14,13 +16,19 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Task::class);
+
         $query = Task::where('user_id', auth()->id());
 
         if ($request->has('priority')) {
             $query->where('priority', $request->priority);
         }
 
-        $tasks = $query->get();
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $tasks = $query->orderBy('due_date', 'asc')->paginate(15);
 
         return TaskResource::collection($tasks);
     }
@@ -28,18 +36,9 @@ class TaskController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'required|date|after:now',
-            'priority' => 'required|in:low,medium,high',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $this->authorize('create', Task::class);
 
         $task = Task::create([
             'user_id' => auth()->id(),
@@ -49,7 +48,11 @@ class TaskController extends Controller
             'priority' => $request->priority,
         ]);
 
-        return new TaskResource($task);
+        Log::info('Task created', ['task_id' => $task->id, 'user_id' => auth()->id()]);
+
+        return (new TaskResource($task))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -57,9 +60,7 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
+        $this->authorize('view', $task);
 
         return new TaskResource($task);
     }
@@ -67,25 +68,13 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Task $task)
+    public function update(UpdateTaskRequest $request, Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'sometimes|required|date|after:now',
-            'status' => 'sometimes|required|in:pending,completed',
-            'priority' => 'sometimes|required|in:low,medium,high',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $this->authorize('update', $task);
 
         $task->update($request->only(['title', 'description', 'due_date', 'status', 'priority']));
+
+        Log::info('Task updated', ['task_id' => $task->id, 'user_id' => auth()->id()]);
 
         return new TaskResource($task);
     }
@@ -95,12 +84,16 @@ class TaskController extends Controller
      */
     public function destroy(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
+        $this->authorize('delete', $task);
 
+        $taskId = $task->id;
         $task->delete();
 
-        return response()->json(['message' => 'Task deleted']);
+        Log::info('Task deleted', ['task_id' => $taskId, 'user_id' => auth()->id()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task deleted successfully'
+        ], 200);
     }
 }
